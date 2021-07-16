@@ -67,6 +67,7 @@ class User(Base):
     is_anonymous = Column(Boolean, nullable=False)
     api_key = Column(String(36), nullable=False)
 
+
     def __init__(self, username: str, role_id: int = None, name: str = None,
                  surname: str = None):
         self.username = username
@@ -86,6 +87,7 @@ class Genres(Base):
     def __init__(self, genre_name: str, description: str = None):
         self.genre_name = genre_name
         self.description = description
+
 
 
 class Producer(Base):
@@ -114,6 +116,7 @@ class Film(Base):
     film_title = Column(String(100), nullable=False)
     release_date = Column(DateTime, nullable=False)
     producer_id = Column(ForeignKey('producers.producer_id'))
+
     description = Column(Text)
     rating = Column(Numeric(4, 2))
     poster = Column(Text, nullable=False)
