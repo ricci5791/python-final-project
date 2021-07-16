@@ -9,6 +9,7 @@ from sqlalchemy import (Column,
                         String,
                         Text,
                         DateTime,
+                        Boolean,
                         create_engine)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -60,6 +61,11 @@ class User(Base):
     name = Column(String(50))
     surname = Column(String(50))
     country_id = Column(ForeignKey('countries.country_id'))
+    password = Column(String(50), nullable=False)
+    is_authenticated = Column(Boolean, nullable=False)
+    is_active = Column(Boolean, nullable=False)
+    is_anonymous = Column(Boolean, nullable=False)
+    api_key = Column(String(36), nullable=False)
 
     def __init__(self, username: str, role_id: int = None, name: str = None,
                  surname: str = None):
