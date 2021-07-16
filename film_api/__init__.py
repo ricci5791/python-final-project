@@ -14,12 +14,5 @@ from film_api.blueprints.login import login
 app.register_blueprint(login)
 
 
-@app.route('/init_db')
-def init_db_end():
-    init_db()
-    return '', 200
-
-
 if __name__ == '__main__':
     app.run()
-    init_db()
