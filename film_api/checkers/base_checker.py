@@ -2,6 +2,7 @@
 import datetime
 from typing import List
 from decimal import Decimal
+import re
 
 Numeric = [int, float, Decimal]
 
@@ -28,31 +29,33 @@ class BaseChecker:
 
         :return: None
         """
-        if isinstance(str, data):
+        if not isinstance(data, str):
             self.mark_incorrect()
             self._add_error_wrong_type(str, type(data))
+            return
 
         if len(data) > max_length:
             self.mark_incorrect()
             self.errors.append(
                     f'Expected max length of {max_length}, got {len(data)}')
 
-    def check_number(self, data, min_value: Numeric = None,
-                     max_value: Numeric = None) -> None:
+    def check_number(self, data, min_value: Numeric,
+                     max_value: Numeric) -> None:
         """
         Checks number fields to be within the given range
 
         :param data: Number to be checked
-        :param min_value: Min range number
-        :param max_value: Max range number
+        :param min_value: Min range number (included)
+        :param max_value: Max range number (excluded)
 
         :return: None
         """
         if type(data) not in Numeric:
             self.mark_incorrect()
             self._add_error_wrong_type(Numeric, type(data))
+            return
 
-        if data > min_value or data > max_value:
+        if not min_value <= data < max_value:
             self.mark_incorrect()
             self.errors.append(
                     f'Value out of range. Expected from {min_value} to'
@@ -65,26 +68,32 @@ class BaseChecker:
         :param data: String that contains date of format 'YYYY-MM-DD'
         :return: None
         """
-        split_date = data.split('-')
+        if not isinstance(data, str):
+            self.mark_incorrect()
+            self._add_error_wrong_type(str, type(data))
+            return
 
-        if len(split_date) != 3:
+        if not re.match(r'\d{4}-\d{1,2}-\d{1,2}', data):
             self.mark_incorrect()
             self.errors.append(
                     f'Wrong date format. Expected "YYYY-MM-DD" format, '
                     f'got {data}')
+            return
 
-        if not 1888 < int(split_date[0]) < datetime.datetime.now().year:
+        year, month, day = [int(x) for x in data.split('-')]
+
+        if not 1888 <= year <= datetime.datetime.now().year:
             self.mark_incorrect()
             self.errors.append(f'Wrong year. First film was filmed in 1888. '
-                               f'Got {split_date[0]}')
+                               f'Got {year}')
 
-        if not 0 < int(split_date[1]) < 13:
+        if not 0 < month < 13:
             self.mark_incorrect()
-            self.errors.append(f'Wrong month. Got {split_date[1]}')
+            self.errors.append(f'Wrong month. Got {month}')
 
-        if not 0 < int(split_date[2]) < 31:
+        if not 0 < day < 32:
             self.mark_incorrect()
-            self.errors.append(f'Wrong day. Got {split_date[2]}')
+            self.errors.append(f'Wrong day. Got {day}')
 
     def mark_incorrect(self) -> None:
         """

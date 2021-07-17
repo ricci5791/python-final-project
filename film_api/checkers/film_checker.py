@@ -1,8 +1,8 @@
 """Module with film checker class"""
 from typing import Dict, Optional, List, Tuple
 
-import constrains as constr
-from base_checker import BaseChecker
+import film_api.checkers.constrains as constr
+from film_api.checkers.base_checker import BaseChecker
 
 
 class FilmChecker(BaseChecker):
@@ -10,7 +10,7 @@ class FilmChecker(BaseChecker):
     Film checker class with validation methods
     """
     film_reference_list = ['film_title', 'release_date', 'rating', 'poster',
-                           'created_at', 'director_id', 'description']
+                           'created_at', 'producer_id', 'description']
 
     film_str_data = ['film_title', 'poster', 'description']
     film_date_data = ['release_date', 'created_at']
@@ -23,8 +23,11 @@ class FilmChecker(BaseChecker):
         :param film_data: Dict of film data
         :return: None
         """
-        if film_data.keys() != self.film_reference_list:
+        if list(film_data.keys()) != self.film_reference_list:
             self.mark_incorrect()
+            self.errors.append(f'Wrong fields were given. '
+                               f'Expected {self.film_reference_list}, '
+                               f'got {film_data.keys()}')
             return
 
         for key in self.film_str_data:
