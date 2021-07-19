@@ -69,7 +69,7 @@ def login_endpoint():
 
     :return: Return string token if login is successful, http400 otherwise
     """
-    user = load_user_with_password()
+    user = load_user_with_password(request)
 
     if user:
         next_url = request.args.get('next')

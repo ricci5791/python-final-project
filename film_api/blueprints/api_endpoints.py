@@ -5,13 +5,14 @@ import flask_login
 from flask import Blueprint, request
 from flask_restx import Resource, Api
 
+from film_api.blueprints import swagger_parsers as parsers
 from film_api.checkers.film_checker import FilmChecker
 from film_api.database.db_worker import DBWorker
 from film_api.database.models import Film, db_session
 
 api_blueprint = Blueprint('api_endpoints', __name__)
 
-api = Api(api_blueprint)
+api = Api(api_blueprint, doc='/doc/')
 
 
 @api.route('/film', methods=['GET', 'POST'])
@@ -20,6 +21,7 @@ class FilmEndpoint(Resource):
     """film endpoints class"""
 
     @flask_login.login_required
+    @api.expect(parsers.film_get_parser)
     def get(self, film_id=None):
         """
         Get endpoint for film retrieval with specific parameters like genre,
@@ -84,6 +86,7 @@ class FilmEndpoint(Resource):
                404
 
     @flask_login.login_required
+    @api.expect(parsers.film_post_parser)
     def post(self):
         """
         Post endpoint to add film information to the db
@@ -102,7 +105,7 @@ class FilmEndpoint(Resource):
                     datetime.datetime.strptime(film_data['release_date'],
                                                '%Y-%m-%d'),
                     film_data['poster'], film_data['created_by'],
-                    film_data['producer_id'], film_data['description'],
+                    film_data['director_id'], film_data['description'],
                     film_data['rating'])
 
         db_session.add(film)
@@ -111,6 +114,7 @@ class FilmEndpoint(Resource):
         return f'film has been added with id {film.film_id}', 200
 
     @flask_login.login_required
+    @api.expect(parsers.film_post_parser)
     def patch(self, film_id):
         """
         Patch endpoint to apply given changes to a specific film by film id
@@ -160,6 +164,7 @@ class FilmEndpoint(Resource):
 class DirectorEndpoint(Resource):
     """Directors endpoints for GET method"""
 
+    @api.expect(parsers.directors_get_parser)
     def get(self):
         """
         Get endpoint to get info about present directors, if name or surname is
