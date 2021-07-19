@@ -2,12 +2,13 @@
 Login blueprint with authorization with either username/password or api key
 """
 from typing import Optional
+
 from flask import Blueprint, request, redirect, url_for
 from flask_login import login_user
 
 from film_api import login_manager
-from film_api.database.models import User, db_session
 from film_api.database.db_worker import DBWorker
+from film_api.database.models import User, db_session
 
 login = Blueprint('login', __name__)
 
@@ -24,7 +25,7 @@ def load_user(api_key):
 
 
 @login_manager.request_loader
-def load_user_with_password() -> Optional[User]:
+def load_user_with_password(request) -> Optional[User]:
     """
     Retrieve authorization header from http request and return user if such
     exists
