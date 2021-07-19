@@ -2,6 +2,8 @@
 import os
 
 from decimal import Decimal
+from typing import Dict
+
 from sqlalchemy import (Column,
                         ForeignKey,
                         Integer,
@@ -32,7 +34,24 @@ def init_db():
     Base.metadata.create_all(bind=engine)
 
 
-class Role(Base):
+class JSONSerializable:
+    def to_json(self) -> Dict:
+        """
+        Iterate throughout the instance of class and add its properties
+        to a dict
+
+        :return: Dict of properties
+        :rtype: Dict
+        """
+        json_result = dict()
+
+        for item in [item for item in vars(self) if not item.startswith('_')]:
+            json_result[item] = eval('self.' + item)
+
+        return json_result
+
+
+class Role(Base, JSONSerializable):
     """Role model class"""
     __tablename__ = 'roles'
 
@@ -40,7 +59,7 @@ class Role(Base):
     role_name = Column(String(50))
 
 
-class Country(Base):
+class Country(Base, JSONSerializable):
     """Country model class"""
     __tablename__ = 'countries'
 
@@ -51,7 +70,7 @@ class Country(Base):
         self.country = country
 
 
-class User(Base):
+class User(Base, JSONSerializable):
     """User model class"""
     __tablename__ = 'users'
 
@@ -67,7 +86,6 @@ class User(Base):
     is_anonymous = Column(Boolean, nullable=False)
     api_key = Column(String(36), nullable=False)
 
-
     def __init__(self, username: str, role_id: int = None, name: str = None,
                  surname: str = None):
         self.username = username
@@ -75,8 +93,17 @@ class User(Base):
         self.name = name
         self.surname = surname
 
+    def get_id(self) -> str:
+        """
+        Retrieve api key from User model
 
-class Genres(Base):
+        :return: Api key of the user instance
+        :rtype: str
+        """
+        return self.api_key
+
+
+class Genres(Base, JSONSerializable):
     """Genre model class"""
     __tablename__ = 'genres'
 
@@ -89,12 +116,11 @@ class Genres(Base):
         self.description = description
 
 
+class Director(Base, JSONSerializable):
+    """Director model class"""
+    __tablename__ = 'directors'
 
-class Producer(Base):
-    """Producer model class"""
-    __tablename__ = 'producers'
-
-    producer_id = Column(Integer, primary_key=True)
+    director_id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
     surname = Column(String(50), nullable=False)
     birth_date = Column(DateTime)
@@ -108,21 +134,21 @@ class Producer(Base):
         self.country_id = country_id
 
 
-class Film(Base):
+class Film(Base, JSONSerializable):
     """Film model class"""
     __tablename__ = 'films'
 
     film_id = Column(Integer, primary_key=True)
     film_title = Column(String(100), nullable=False)
     release_date = Column(DateTime, nullable=False)
-    producer_id = Column(ForeignKey('producers.producer_id'))
+    director_id = Column(ForeignKey('directors.director_id'))
 
     description = Column(Text)
     rating = Column(Numeric(4, 2))
     poster = Column(Text, nullable=False)
     created_by = Column(ForeignKey('users.user_id'), nullable=False)
 
-    def __init__(self, film_title: str, release_date: str, poster, created_by,
+    def __init__(self, film_title: str, release_date, poster, created_by,
                  producer_id: int = None, description: str = None,
                  rating: Decimal = None):
         self.film_title = film_title
@@ -134,7 +160,7 @@ class Film(Base):
         self.created_by = created_by
 
 
-class FilmGenre(Base):
+class FilmGenre(Base, JSONSerializable):
     """Films and genres proxy table"""
     __tablename__ = 'films_genres'
 
