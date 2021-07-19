@@ -37,6 +37,11 @@ class FilmEndpoint(Resource):
         sort_dates = request.args.get('sort_dates')
         sort_rating = request.args.get('sort_rating')
 
+        api.logger.info(
+                f'INFO:{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                f' - Film.GET request '
+                f'from user_id:{flask_login.current_user.user_id}')
+
         if film_title is None and film_id is None:
             return 'Wrong input. Provide either id or title of a film', 400
 
@@ -47,15 +52,34 @@ class FilmEndpoint(Resource):
         film_query = DBWorker.get_film_by_title(film_title)
 
         if director_name is not None or director_surname is not None:
+            api.logger.debug(
+                    f'DEBUG: Film.GET request '
+                    f'from user_id:{flask_login.current_user.user_id} '
+                    f'entered director search section with params: '
+                    f'director_name:{director_name}'
+                    f' director_surname:{director_surname}')
+
             film_query = DBWorker.filter_film_by_director(film_query,
                                                           director_name,
                                                           director_surname)
 
         if genre:
+            api.logger.debug(
+                    f'DEBUG: Film.GET request '
+                    f'from user_id:{flask_login.current_user.user_id} '
+                    f'entered genre section with param: '
+                    f'genre:{genre}')
+
             film_query = DBWorker.filter_film_by_genre(film_query, genre)
 
         if release_date_range:
             start_date, end_date = release_date_range.split(',')[:2]
+
+            api.logger.debug(
+                    f'DEBUG: Film.GET request '
+                    f'from user_id:{flask_login.current_user.user_id} '
+                    f'entered release date ranging with params: '
+                    f'start_date:{start_date} end_date:{end_date}')
 
             film_checker = FilmChecker()
 
@@ -70,6 +94,12 @@ class FilmEndpoint(Resource):
                                                               end_date)
 
         if sort_dates is not None or sort_rating is not None:
+            api.logger.debug(
+                    f'DEBUG: Film.GET request '
+                    f'from user_id:{flask_login.current_user.user_id} '
+                    f'entered sort section with params: '
+                    f'dates:{sort_dates} rating:{sort_rating}')
+
             if sort_dates is not None:
                 sort_dates = int(sort_dates)
             if sort_rating is not None:
@@ -78,10 +108,14 @@ class FilmEndpoint(Resource):
             film_query = DBWorker.sort_film(film_query, sort_dates, sort_rating)
 
         if film_query:
+            api.logger.info(
+                    f'INFO: for user_id:{flask_login.current_user.user_id}'
+                    f' retrieved {film_query.count()} entries')
+
             return str([film.to_json() for film in film_query.all()]), 200
 
-        return f'Film with id "{film_id}" or title "{film_title}" was not found', \
-               404
+        return f'Film with id "{film_id}" or title "{film_title}" ' \
+               f'was not found', 404
 
     @flask_login.login_required
     def post(self):
@@ -90,23 +124,33 @@ class FilmEndpoint(Resource):
 
         :return: HTTP response with status code
         """
+        api.logger.info(
+                f'INFO:{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                '- Film.POST request '
+                f'from user_id:{flask_login.current_user.user_id}')
         film_data = dict(request.get_json())
         film_checker = FilmChecker()
 
         is_correct, errors = film_checker.start_validation(film_data)
 
         if not is_correct:
+            api.logger.warning(
+                    f'WARNING: Film.POST request; wrong data with next errors:'
+                    f'{errors}')
             return str(errors), 400
 
         film = Film(film_data['film_title'],
                     datetime.datetime.strptime(film_data['release_date'],
                                                '%Y-%m-%d'),
                     film_data['poster'], film_data['created_by'],
-                    film_data['producer_id'], film_data['description'],
+                    film_data['director_id'], film_data['description'],
                     film_data['rating'])
 
         db_session.add(film)
         db_session.commit()
+
+        api.logger.info('INFO: film.post request processed film with '
+                        f'film_id:{film.film_id}, title:{film.film_title}')
 
         return f'film has been added with id {film.film_id}', 200
 
@@ -118,6 +162,11 @@ class FilmEndpoint(Resource):
         :param film_id: Film id to be changed
         :return: HTTP response with status code
         """
+        api.logger.info(
+                f'INFO:{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                '- Film.PATCH request '
+                f'from user_id:{flask_login.current_user.user_id}')
+
         film_checker = FilmChecker()
         film_data = DBWorker.get_film_by_id(film_id).first()
         patch_data = request.get_json()
@@ -135,6 +184,9 @@ class FilmEndpoint(Resource):
         is_correct, errors = film_checker.start_validation(film_data)
 
         if not is_correct:
+            api.logger.warning(
+                    f'WARNING: Film.PATCH request; wrong data with next errors:'
+                    f'{errors}')
             return str(errors), 400
 
         return f'Changes has been applied to film {film_id}', 200
@@ -147,11 +199,25 @@ class FilmEndpoint(Resource):
         :param film_id: Film id to be deleted
         :return: HTTP response with deleted film in json and status code
         """
-        film_data = DBWorker.delete_film_by_id(film_id,
-                                               flask_login.current_user.user_id)
+        api.logger.info(
+                f'INFO:{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                '- Film.DELETE request '
+                f'from user_id:{flask_login.current_user.user_id} '
+                f'requesting to delete film_id:{film_id}')
 
-        if film_data.first():
-            return str(film_data.first().to_json()), 200
+        film_data = DBWorker.delete_film_by_id(film_id,
+                                               flask_login.
+                                               current_user.user_id)
+
+        if film_data:
+            api.logger.info(
+                    f'INFO:'
+                    f'{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                    '- Film.DELETE request '
+                    f'from user_id:{flask_login.current_user.user_id} '
+                    f'film_id:{film_id} was deleted by user')
+
+            return str(film_data.to_json()), 200
 
         return f'Film with id "{film_id}" was not found', 404
 
@@ -169,6 +235,11 @@ class DirectorEndpoint(Resource):
 
         :return: HTTP response with directors list in json and status code
         """
+        api.logger.info(
+                f'INFO:{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                f' - Directors.GET request '
+                f'from user_id:{flask_login.current_user.user_id}')
+
         director_name = request.args.get('name')
         director_surname = request.args.get('surname')
 
@@ -176,7 +247,18 @@ class DirectorEndpoint(Resource):
             return str([director.to_json() for director in
                         DBWorker.get_directors().all()]), 200
 
+        api.logger.debug(
+                f'DEBUG: Directors.GET request '
+                f'from user_id:{flask_login.current_user.user_id} '
+                f'entered filter director name/surname with params: '
+                f'director_name:{director_name} '
+                f'director_surname:{director_surname}')
+
         director_query = DBWorker.get_director(director_name, director_surname)
+
+        api.logger.info(
+                f'INFO: for user_id:{flask_login.current_user.user_id}'
+                f' retrieved {director_query.count()} entries')
 
         return str([director.to_json() for director in
                     director_query.all()]), 200
