@@ -9,11 +9,11 @@ class FilmChecker(BaseChecker):
     """
     Film checker class with validation methods
     """
-    film_reference_list = ['film_title', 'release_date', 'rating', 'poster',
-                           'created_at', 'producer_id', 'description']
+    film_reference_list = ['created_by', 'description', 'director_id',
+                           'film_title', 'poster', 'rating', 'release_date']
 
     film_str_data = ['film_title', 'poster', 'description']
-    film_date_data = ['release_date', 'created_at']
+    film_date_data = ['release_date']
     film_numeric_data = ['rating']
 
     def check_film_data(self, film_data: Dict) -> None:
@@ -23,7 +23,7 @@ class FilmChecker(BaseChecker):
         :param film_data: Dict of film data
         :return: None
         """
-        if list(film_data.keys()) != self.film_reference_list:
+        if sorted(list(film_data.keys())) != self.film_reference_list:
             self.mark_incorrect()
             self.errors.append(f'Wrong fields were given. '
                                f'Expected {self.film_reference_list}, '
