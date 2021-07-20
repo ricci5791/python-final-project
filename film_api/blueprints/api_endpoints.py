@@ -1,5 +1,7 @@
 """Module with blueprint of api endpoints"""
 import datetime
+import logging
+import os
 
 import flask_login
 from flask import Blueprint, request
@@ -13,6 +15,17 @@ from film_api.database.models import Film, db_session
 api_blueprint = Blueprint('api_endpoints', __name__)
 
 api = Api(api_blueprint, doc='/doc/')
+
+if os.getenv('DEBUG'):
+    api.logger.setLevel(logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    api.logger.setLevel(logging.INFO)
+    logging.basicConfig(level=logging.INFO)
+
+fh = logging.FileHandler("api.log")
+
+api.logger.addHandler(fh)
 
 
 @api.route('/film', methods=['GET', 'POST'])
@@ -38,6 +51,11 @@ class FilmEndpoint(Resource):
         release_date_range = request.args.get('release_date')
         sort_dates = request.args.get('sort_dates')
         sort_rating = request.args.get('sort_rating')
+
+        api.logger.info(
+                f'INFO:{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                f' - Film.GET request '
+                f'from user_id:{flask_login.current_user.user_id}')
 
         if film_title is None and film_id is None:
             return 'Wrong input. Provide either id or title of a film', 400
@@ -80,10 +98,14 @@ class FilmEndpoint(Resource):
             film_query = DBWorker.sort_film(film_query, sort_dates, sort_rating)
 
         if film_query:
+            api.logger.info(
+                    f'INFO: for user_id:{flask_login.current_user.user_id}'
+                    f' retrieved {film_query.count()} entries')
+
             return str([film.to_json() for film in film_query.all()]), 200
 
-        return f'Film with id "{film_id}" or title "{film_title}" was not found', \
-               404
+        return f'Film with id "{film_id}" or title "{film_title}" ' \
+               f'was not found', 404
 
     @flask_login.login_required
     @api.expect(parsers.film_post_parser)
@@ -93,12 +115,20 @@ class FilmEndpoint(Resource):
 
         :return: HTTP response with status code
         """
+        api.logger.info(
+                f'INFO:{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                '- Film.POST request '
+                f'from user_id:{flask_login.current_user.user_id}')
         film_data = dict(request.get_json())
         film_checker = FilmChecker()
 
         is_correct, errors = film_checker.start_validation(film_data)
 
         if not is_correct:
+            api.logger.warning(
+                    f'WARNING: Film.POST request; wrong data caused'
+                    f' next errors:'
+                    f'{errors}')
             return str(errors), 400
 
         film = Film(film_data['film_title'],
@@ -111,6 +141,9 @@ class FilmEndpoint(Resource):
         db_session.add(film)
         db_session.commit()
 
+        api.logger.info('INFO: film.post request processed film with '
+                        f'film_id:{film.film_id}, title:{film.film_title}')
+
         return f'film has been added with id {film.film_id}', 200
 
     @flask_login.login_required
@@ -122,6 +155,11 @@ class FilmEndpoint(Resource):
         :param film_id: Film id to be changed
         :return: HTTP response with status code
         """
+        api.logger.info(
+                f'INFO:{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                '- Film.PATCH request '
+                f'from user_id:{flask_login.current_user.user_id}')
+
         film_checker = FilmChecker()
         film_data = DBWorker.get_film_by_id(film_id).first()
         patch_data = request.get_json()
@@ -139,6 +177,9 @@ class FilmEndpoint(Resource):
         is_correct, errors = film_checker.start_validation(film_data)
 
         if not is_correct:
+            api.logger.warning(
+                    f'WARNING: Film.PATCH request; wrong data with next errors:'
+                    f'{errors}')
             return str(errors), 400
 
         return f'Changes has been applied to film {film_id}', 200
@@ -151,11 +192,25 @@ class FilmEndpoint(Resource):
         :param film_id: Film id to be deleted
         :return: HTTP response with deleted film in json and status code
         """
-        film_data = DBWorker.delete_film_by_id(film_id,
-                                               flask_login.current_user.user_id)
+        api.logger.info(
+                f'INFO:{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                '- Film.DELETE request '
+                f'from user_id:{flask_login.current_user.user_id} '
+                f'requesting to delete film_id:{film_id}')
 
-        if film_data.first():
-            return str(film_data.first().to_json()), 200
+        film_data = DBWorker.delete_film_by_id(film_id,
+                                               flask_login.
+                                               current_user.user_id)
+
+        if film_data:
+            api.logger.info(
+                    f'INFO:'
+                    f'{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                    '- Film.DELETE request '
+                    f'from user_id:{flask_login.current_user.user_id} '
+                    f'film_id:{film_id} was deleted by user')
+
+            return str(film_data.to_json()), 200
 
         return f'Film with id "{film_id}" was not found', 404
 
@@ -174,6 +229,11 @@ class DirectorEndpoint(Resource):
 
         :return: HTTP response with directors list in json and status code
         """
+        api.logger.info(
+                f'INFO:{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                f' - Directors.GET request '
+                f'from user_id:{flask_login.current_user.user_id}')
+
         director_name = request.args.get('name')
         director_surname = request.args.get('surname')
 
@@ -181,7 +241,18 @@ class DirectorEndpoint(Resource):
             return str([director.to_json() for director in
                         DBWorker.get_directors().all()]), 200
 
+        api.logger.debug(
+                f'DEBUG: Directors.GET request '
+                f'from user_id:{flask_login.current_user.user_id} '
+                f'entered filter director name/surname with params: '
+                f'director_name:{director_name} '
+                f'director_surname:{director_surname}')
+
         director_query = DBWorker.get_director(director_name, director_surname)
+
+        api.logger.info(
+                f'INFO: for user_id:{flask_login.current_user.user_id}'
+                f' retrieved {director_query.count()} entries')
 
         return str([director.to_json() for director in
                     director_query.all()]), 200

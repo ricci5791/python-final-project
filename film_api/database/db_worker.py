@@ -76,7 +76,7 @@ class DBWorker:
         :return: Query of film
         :rtype: Query
         """
-        film = DBWorker.get_film_by_id(film_id)
+        film = DBWorker.get_film_by_id(film_id).first()
 
         models.Film.query.filter_by(film_id=film_id) \
             .filter_by(created_by=user_id).delete()
