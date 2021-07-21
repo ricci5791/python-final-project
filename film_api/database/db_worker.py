@@ -10,17 +10,18 @@ class DBWorker:
     """Proxy class for retrieving data from the database"""
 
     @staticmethod
-    def get_user_by_id(user_id) -> Optional[models.User]:
+    def get_user_by_id(user_id: int) -> Optional[models.User]:
         """
         Retrieve user from db by user_id
 
-        :param user_id:
+        :param user_id: Id of the looking user
         :return: User instance if such exists
         """
         return models.User.query.filter_by(user_id=user_id).first()
 
     @staticmethod
-    def get_user_by_creds(username, password) -> Optional[models.User]:
+    def get_user_by_creds(username: str, password: str) \
+            -> Optional[models.User]:
         """
         Retrieve user from db by username and password
 
@@ -32,18 +33,18 @@ class DBWorker:
                 password=password).first()
 
     @staticmethod
-    def get_user_by_api_key(api_key) -> Optional[models.User]:
+    def get_user_by_api_key(api_key: str) -> Optional[models.User]:
         """
         Retrieve user from db by api_key
 
-        :param api_key:
+        :param api_key: Api key of the user
         :return: User instance if such exists
         :rtype: User
         """
         return models.User.query.filter_by(api_key=api_key).first()
 
     @staticmethod
-    def get_film_by_id(film_id) -> Query:
+    def get_film_by_id(film_id: int) -> Query:
         """
         Retrieve film by it's id
 
@@ -54,7 +55,7 @@ class DBWorker:
         return models.Film.query.filter_by(film_id=film_id)
 
     @staticmethod
-    def get_film_by_id_by_user(film_id, user_id) -> Query:
+    def get_film_by_id_by_user(film_id: int, user_id: int) -> Query:
         """
         Retrieve film that s created by some user
 
@@ -62,12 +63,12 @@ class DBWorker:
         :param user_id: User id that created film instance
         :return: Query of film that has been found
         :rtype: Query
-        """""
+        """
         return models.Film.query.filter_by(film_id=film_id) \
             .filter_by(created_by=user_id)
 
     @staticmethod
-    def delete_film_by_id(film_id, user_id) -> Query:
+    def delete_film_by_id(film_id: int, user_id: int) -> Query:
         """
         Delete film by id and commit changes to the database
 
@@ -197,7 +198,7 @@ class DBWorker:
         return models.Director.query
 
     @staticmethod
-    def get_director(director_name=None, director_surname=None):
+    def get_director(director_name: str = None, director_surname: str = None):
         """
         Retrieve directors with partial similarity with given name or surname
 
