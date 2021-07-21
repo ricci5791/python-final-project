@@ -2,6 +2,6 @@
 
 ### Used technologies
 
-* Postgresql (*in progress*)
+* Postgresql
 * Flask 2.0
 * SQLAlchemy
