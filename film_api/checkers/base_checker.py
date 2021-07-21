@@ -1,8 +1,8 @@
 """Module with base checker class"""
 import datetime
+import re
 from typing import List
 from decimal import Decimal
-import re
 
 Numeric = [int, float, Decimal]
 
