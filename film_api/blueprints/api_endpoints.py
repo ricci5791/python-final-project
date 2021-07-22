@@ -102,7 +102,11 @@ class FilmEndpoint(Resource):
                     f'INFO: for user_id:{flask_login.current_user.user_id}'
                     f' retrieved {film_query.count()} entries')
 
-            return str([film.to_json() for film in film_query.all()]), 200
+            current_page = request.args.get('page') or 1
+            film_pages = DBWorker.get_pagination_from_query(film_query,
+                                                            current_page)
+
+            return str([film.to_json() for film in film_pages.items]), 200
 
         return f'Film with id "{film_id}" or title "{film_title}" ' \
                f'was not found', 404
@@ -254,5 +258,9 @@ class DirectorEndpoint(Resource):
                 f'INFO: for user_id:{flask_login.current_user.user_id}'
                 f' retrieved {director_query.count()} entries')
 
+        current_page = request.args.get('page') or 1
+        directors_pages = DBWorker.get_pagination_from_query(director_query,
+                                                             current_page)
+
         return str([director.to_json() for director in
-                    director_query.all()]), 200
+                    directors_pages.items]), 200

@@ -35,6 +35,9 @@ film_get_parser.add_argument('Sort by rating', type=int,
                                   '-1 for descending, 0 for no sort,'
                                   ' 1 for ascending',
                              location='query')
+film_get_parser.add_argument('page', type=int,
+                             help='Page number for pagination',
+                             location='query')
 
 film_post_parser = api.parser()
 
@@ -79,4 +82,7 @@ directors_get_parser.add_argument('Name', type=str,
 directors_get_parser.add_argument('Surname', type=str,
                                   help='Surname of the director,'
                                        ' partial similarity',
+                                  location='query')
+directors_get_parser.add_argument('page', type=int,
+                                  help='Page number for pagination',
                                   location='query')

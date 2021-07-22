@@ -1,6 +1,8 @@
 """Module that contains basic database queries"""
+import os
 from typing import Optional
 
+from paginate_sqlalchemy import SqlalchemyOrmPage
 from sqlalchemy.orm import Query
 
 from film_api.database import models
@@ -8,6 +10,8 @@ from film_api.database import models
 
 class DBWorker:
     """Proxy class for retrieving data from the database"""
+
+    page_size = os.getenv('paginate_page_size') or 10
 
     @staticmethod
     def get_user_by_id(user_id: int) -> Optional[models.User]:
@@ -220,3 +224,10 @@ class DBWorker:
                     models.Director.surname.ilike(surname_search))
 
         return directors_query
+
+    @staticmethod
+    def get_pagination_from_query(query: Query, start_page: int) -> Query:
+        query_pages = SqlalchemyOrmPage(query, page=start_page,
+                                        items_per_page=DBWorker.page_size)
+
+        return query_pages
