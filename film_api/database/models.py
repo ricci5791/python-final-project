@@ -1,6 +1,5 @@
 """Module with database models"""
 import os
-
 from decimal import Decimal
 from typing import Dict
 
@@ -12,7 +11,8 @@ from sqlalchemy import (Column,
                         Text,
                         DateTime,
                         Boolean,
-                        create_engine)
+                        create_engine,
+                        Index)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 
@@ -84,6 +84,7 @@ class User(Base, JSONSerializable):
     is_authenticated = Column(Boolean, nullable=False)
     is_active = Column(Boolean, nullable=False)
     is_anonymous = Column(Boolean, nullable=False)
+    is_admin = Column(Boolean, nullable=False)
     api_key = Column(String(36), nullable=False)
 
     def __init__(self, username: str, role_id: int = None, name: str = None,
@@ -170,3 +171,10 @@ class FilmGenre(Base, JSONSerializable):
     def __init__(self, film_id: int, genre_id: int):
         self.film_id = film_id
         self.genre_id = genre_id
+
+
+Index('film_id_idx', Film.film_id)
+Index('film_id_user_id_idx', Film.film_id, Film.created_by)
+Index('film_genre_film_id_idx', FilmGenre.film_id, FilmGenre.genre_id)
+Index('director_name_idx', Director.name)
+Index('director_surname_idx', Director.surname)
